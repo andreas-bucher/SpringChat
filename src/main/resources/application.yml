@@ -1,0 +1,40 @@
+logging:
+  level:
+    root: INFO
+    ch.arcticsoft.spring: DEBUG
+
+    # Web / reactive server
+    org.springframework.web: INFO
+    org.springframework.web.reactive: INFO
+    reactor.netty.http.server: INFO
+
+    # Spring AI (helps see prompts, tool calls depending on modules)
+    org.springframework.ai: DEBUG
+    org.springframework.ai.chat: DEBUG
+    org.springframework.ai.tool: DEBUG
+
+    # Keep these quieter (they can be spammy)
+    org.springframework.boot.autoconfigure: INFO
+    org.springframework.context.annotation: INFO
+    reactor.core.publisher: WARN    
+    
+server:
+  reactive:
+    session:
+      timeout: 30m
+
+reactor:
+  netty:
+    http:
+      server:
+        accessLogEnabled: true
+
+spring:
+  profiles:
+    active: 
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4o-mini

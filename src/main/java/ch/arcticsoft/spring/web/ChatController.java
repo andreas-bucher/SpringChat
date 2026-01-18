@@ -55,15 +55,16 @@ public class ChatController {
                     "message must not be empty"
             );
         }
-        log.info("*********************************************************************\nQuestion:\n{}", msg);
+        log.info("*********************************************************************");
+        log.info("Question: {}", msg);
         return Mono.fromSupplier(() -> {
             var response = chatClient
                 .prompt()
                 .system(promptText)
                 .user(msg.trim())
                 .call(); // ⬅️ BLOCKING
-            log.info("🧠 LLM RAW RESPONSE:\n{}", response);
-            log.info("🧠 LLM FINAL CONTENT:\n{}", response.content());
+            log.info("🧠 LLM RAW RESPONSE:{}", response);
+            log.info("🧠 LLM FINAL CONTENT:{}", response.content());
             return response.content();
         }).subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
           .doOnNext(r -> log.info("📤 emitting response to client: '{}'", r))

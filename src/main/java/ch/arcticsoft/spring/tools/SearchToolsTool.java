@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.stereotype.Component;
 
+/**
+
 @Component
 public class SearchToolsTool {
 	private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -37,4 +39,4 @@ public class SearchToolsTool {
                 .limit(10)
                 .toList();
     }
-}
+}*/

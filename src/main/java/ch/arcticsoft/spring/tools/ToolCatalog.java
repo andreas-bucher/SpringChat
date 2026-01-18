@@ -11,9 +11,10 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
+/**
 @Component
 public class ToolCatalog {
-	
+
 	private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private final ApplicationContext ctx;
 
@@ -42,4 +43,6 @@ public class ToolCatalog {
     }
 
     public record ToolInfo(String name, String description) {}
+
 }
+ */

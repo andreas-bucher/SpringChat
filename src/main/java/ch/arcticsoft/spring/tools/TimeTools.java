@@ -19,9 +19,8 @@ public class TimeTools {
         Always includes both date and time in ISO-8601 format.
         """)
     public String nowZurich() {
-    	log.info("TimeToosl - nowZurich");
+    	log.info("TimeTools - nowZurich");
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Europe/Zurich"));
-
         return """
         {
           "timezone": "Europe/Zurich",

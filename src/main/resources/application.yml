@@ -2,10 +2,12 @@ logging:
   level:
     root: INFO
     ch.arcticsoft.spring: DEBUG
+    ch.arcticsoft.spring.web.ChatController: TRACE
 
     # Web / reactive server
     org.springframework.web: INFO
-    org.springframework.web.reactive: INFO
+    org.springframework.web.reactive: DEBUG
+    org.springframework.web.reactive.function.client.ExchangeFunctions: TRACE
     reactor.netty.http.server: INFO
 
     # Spring AI (helps see prompts, tool calls depending on modules)

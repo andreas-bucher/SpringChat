@@ -14,8 +14,10 @@ import org.springframework.stereotype.Component;
 public class TimeTools {
 	private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    @Tool(description = """
-        Returns the current date and time in the Europe/Zurich timezone.
+    @Tool(
+    	name = "nowZurich",
+    	description = """
+        Returns the current date and time today/now/time in the Europe/Zurich timezone.
         Always includes both date and time in ISO-8601 format.
         """)
     public String nowZurich() {

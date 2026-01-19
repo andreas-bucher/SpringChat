@@ -6,16 +6,14 @@ logging:
 
     # Web / reactive server
     org.springframework.web: INFO
-    org.springframework.web.reactive: INFO
+    org.springframework.web.reactive: DEBUG
     org.springframework.web.reactive.function.client.ExchangeFunctions: TRACE
     reactor.netty.http.server: INFO
 
     # Spring AI (helps see prompts, tool calls depending on modules)
-    org.springframework.ai: INFO
+    org.springframework.ai: DEBUG
     org.springframework.ai.chat: DEBUG
     org.springframework.ai.tool: DEBUG
-    org.springaicommunity.tool.searcher: DEBUG
-    org.springaicommunity.tool.searcher.LuceneToolSearcher: TRACE
 
     # Keep these quieter (they can be spammy)
     org.springframework.boot.autoconfigure: INFO
@@ -37,24 +35,8 @@ spring:
   profiles:
     active: 
   ai:
-    mistralai:
-      api-key: ${MISTRAL_API_KEY}
-      chat:
-        options:
-          model: mistral-large-latest
-          temerature: 0.2
-          max-tokens: 1024
     openai:
-      enabled: false  
       api-key: ${OPENAI_API_KEY}
       chat:
         options:
           model: gpt-4o-mini
-          
-  #ai:
-  #  openai:
-  #    base-url: http://localhost:11434
-  #    api-key: ollama
-  #    chat:
-  #      options:
-  #        model: apertus:8b-q5

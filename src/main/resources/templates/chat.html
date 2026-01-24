@@ -659,32 +659,87 @@
     autoSize();
 
     const typing = makeTypingRow();
-    setStatus("busy", "thinking…");
+    setStatus("busy", "streaming…");
+
+    // We’ll accumulate raw text and render progressively
+    let acc = "";
+
+    // Helper: update bubble progressively without heavy formatting until the end
+    function renderProgress(raw) {
+      // keep it lightweight while streaming (no codeblock parsing yet)
+      typing.bubble.textContent = raw || "";
+      scrollToBottom();
+    }
 
     try {
-      const resp = await fetch("/chat", {
+      const resp = await fetch("/stream", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "text/event-stream"
+        },
         body: JSON.stringify({ message: text })
       });
 
-      if (!resp.ok) {
+      if (!resp.ok || !resp.body) {
         typing.bubble.textContent = `Error: HTTP ${resp.status}`;
-        typing.meta.innerHTML = `<span>${nowTime()}</span><span class="pill" style="border-color: rgba(239,68,68,.45);">error</span>`;
+        typing.meta.innerHTML =
+          `<span>${nowTime()}</span><span class="pill" style="border-color: rgba(239,68,68,.45);">error</span>`;
         setStatus("bad", "error");
         saveHistory();
         return;
       }
 
-      const answer = await resp.text();
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder("utf-8");
 
-      renderBubbleContent(typing.bubble, answer || "(empty response)");
+      // SSE parsing state
+      let buffer = "";
+      let done = false;
+
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+        buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+
+        // SSE events are separated by a blank line (\n\n)
+        let idx;
+        while ((idx = buffer.indexOf("\n\n")) !== -1) {
+          const rawEvent = buffer.slice(0, idx);
+          buffer = buffer.slice(idx + 2);
+
+          // Parse SSE event (we care about data: lines; ignore keepalives)
+          // Spec: multiple data: lines should be joined with "\n"
+          const lines = rawEvent.split("\n");
+          const dataLines = [];
+          let eventName = null;
+
+          for (const line of lines) {
+            if (line.startsWith("event:")) eventName = line.slice(6).trim();
+            if (line.startsWith("data:")) dataLines.push(line.slice(5)); // keep leading space if any
+          }
+
+          const data = dataLines.join("\n");
+
+          // Ignore keepalives / empty frames
+          if (eventName === "keepalive") continue;
+          if (!dataLines.length) continue;
+
+          // Append streamed token/chunk
+          acc += data;
+          renderProgress(acc);
+        }
+      }
+
+      // Final render with your nicer formatting (code fences / inline backticks)
+      renderBubbleContent(typing.bubble, acc || "(empty response)");
       typing.meta.innerHTML = `<span>${nowTime()}</span><span class="pill">assistant</span>`;
       setStatus("ok", "ok");
       saveHistory();
     } catch (e) {
       typing.bubble.textContent = "Network error. Check server logs.";
-      typing.meta.innerHTML = `<span>${nowTime()}</span><span class="pill" style="border-color: rgba(239,68,68,.45);">offline</span>`;
+      typing.meta.innerHTML =
+        `<span>${nowTime()}</span><span class="pill" style="border-color: rgba(239,68,68,.45);">offline</span>`;
       setStatus("bad", "offline");
       saveHistory();
     } finally {

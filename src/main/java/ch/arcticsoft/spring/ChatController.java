@@ -9,11 +9,9 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -94,8 +92,11 @@ You are a helpful assistent. Please answer the question.
           .doOnError(e -> log.error("❌ error in chat()", e));
     }
     
-	@RequestMapping("/stream")
-    @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PostMapping(
+    		value="/stream",
+    		consumes = MediaType.APPLICATION_JSON_VALUE,
+    		produces = MediaType.TEXT_EVENT_STREAM_VALUE
+    		)
     public Flux<ServerSentEvent<String>> stream(@RequestBody ChatRequest request) {
       log.info("stream");
       String msg = request == null ? null : request.message();
@@ -123,7 +124,8 @@ You are a helpful assistent. Please answer the question.
                   .map(i -> ServerSentEvent.<String>builder()
                           .event("keepalive")
                           .data("")
-                          .build());
+                          .build())
+                  .takeUntilOther(tokens.ignoreElements()); // stop keepAlive when tokens completes/errors
     return Flux.merge(tokens, keepAlive);
   }
     

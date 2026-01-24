@@ -17,6 +17,7 @@ logging:
     org.springframework.ai.chat: TRACE
     org.springframework.ai.chat.client: DEBUG
     org.springframework.ai.tool: TRACE
+    org.springframework.ai.chat.metadata.ChatResponseMetadata: INFO
     org.springaicommunity.tool.searcher: DEBUG
     org.springaicommunity.tool.searcher.LuceneToolSearcher: TRACE
 
@@ -59,3 +60,4 @@ spring:
       chat:
         options:
           model: apertus:8b-q5
+          num-predict: 126

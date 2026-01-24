@@ -1,4 +1,4 @@
-package ch.arcticsoft.spring.web;
+package ch.arcticsoft.spring;
 
 import java.lang.invoke.MethodHandles;
 
@@ -41,9 +41,10 @@ Execution policy:
 Style:
 - Be concise, accurate, and practical.
   	    """;
-	
-	
-	
+
+	private static final String promptTextApertus = """
+You are a helpful assistent. Please answer the question.
+  	    """;
 	
 	
     public record ChatRequest(String message) {}
@@ -77,13 +78,13 @@ Style:
             var cr = call.chatResponse();
             var out = cr.getResult().getOutput();
             
-            log.info("🧠 LLM RAW ChatResponse: {}", toJson(cr));
+            //log.info("🧠 LLM RAW ChatResponse: {}", toJson(cr));
             log.info("🛠 toolCalls: {}", out.getToolCalls());
-            log.info("🧠 assistant text: {}", out.getText());
+            //log.info("🧠 assistant text: {}", out.getText());
             
             return out.getText();
         }).subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
-          .doOnNext(r -> log.info("📤 emitting response to client: '{}'", r))
+          //.doOnNext(r -> log.info("📤 emitting response to client: '{}'", r))
           .doOnError(e -> log.error("❌ error in chat()", e));
     }
     private String toJson(Object o) {

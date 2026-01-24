@@ -1,4 +1,4 @@
-package ch.arcticsoft.spring.config;
+package ch.arcticsoft.spring;
 
 import java.lang.invoke.MethodHandles;
 
@@ -10,6 +10,8 @@ import org.springaicommunity.tool.searcher.LuceneToolSearcher;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -47,7 +49,6 @@ public class ChatConfig {
   ToolSearchToolCallAdvisor toolSearchAdvisor(ToolSearcher toolSearcher) {
 	log.info("toolSearchAdvisor");
 	this.toolSearcher = toolSearcher;
-	this.toolSearchToolCallAdvisor = toolSearchToolCallAdvisor;
 	
     return ToolSearchToolCallAdvisor.builder()
         .toolSearcher(toolSearcher)
@@ -56,12 +57,15 @@ public class ChatConfig {
 
   @Bean
   ChatClient chatClient(ChatClient.Builder builder,
-                        ToolSearchToolCallAdvisor toolSearchAdvisor,
+                        ToolSearchToolCallAdvisor toolSearchToolCallAdvisor,
                         TimeTools timeTools) {
 	log.info("chatClient");
+	this.toolSearchToolCallAdvisor = toolSearchToolCallAdvisor;
     return builder
-        .defaultTools(timeTools)          // don’t `new` inside
-        .defaultAdvisors(toolSearchAdvisor)
+        //.defaultTools(timeTools)
+        //.defaultAdvisors(toolSearchToolCallAdvisor, SimpleLoggerAdvisor.builder().build())
+        .defaultAdvisors(SimpleLoggerAdvisor.builder().build())
+        //.defaultAdvisors(toolSearchToolCallAdvisor)
         .build();
   }
 }

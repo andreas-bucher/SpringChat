@@ -1,4 +1,4 @@
-package ch.arcticsoft.spring.web;
+package ch.arcticsoft.spring;
 
 import java.lang.invoke.MethodHandles;
 

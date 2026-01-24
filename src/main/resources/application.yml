@@ -8,19 +8,22 @@ logging:
     org.springframework.web: INFO
     org.springframework.web.reactive: INFO
     org.springframework.web.reactive.function.client.ExchangeFunctions: TRACE
+    reactor.core.publisher: INFO
     reactor.netty.http.server: INFO
+    reactor.netty.http.client: INFO
 
     # Spring AI (helps see prompts, tool calls depending on modules)
     org.springframework.ai: INFO
-    org.springframework.ai.chat: DEBUG
-    org.springframework.ai.tool: DEBUG
+    org.springframework.ai.chat: TRACE
+    org.springframework.ai.chat.client: DEBUG
+    org.springframework.ai.tool: TRACE
     org.springaicommunity.tool.searcher: DEBUG
     org.springaicommunity.tool.searcher.LuceneToolSearcher: TRACE
 
     # Keep these quieter (they can be spammy)
     org.springframework.boot.autoconfigure: INFO
     org.springframework.context.annotation: INFO
-    reactor.core.publisher: WARN    
+     
     
 server:
   reactive:
@@ -37,24 +40,22 @@ spring:
   profiles:
     active: 
   ai:
-    mistralai:
-      api-key: ${MISTRAL_API_KEY}
+   # mistralai:
+   #   api-key: ${MISTRAL_API_KEY}
+   #   chat:
+   #     options:
+   #       model: mistral-large-latest
+   #       temerature: 0.2
+   #       max-tokens: 1024
+   # openai:
+   #   enabled: false  
+   #   api-key: ${OPENAI_API_KEY}
+   #   chat:
+   #     options:
+   #       model: gpt-4o-mini        
+    ollama:
+      base-url: http://localhost:11434
+      api-key: ollama
       chat:
         options:
-          model: mistral-large-latest
-          temerature: 0.2
-          max-tokens: 1024
-    openai:
-      enabled: false  
-      api-key: ${OPENAI_API_KEY}
-      chat:
-        options:
-          model: gpt-4o-mini
-          
-  #ai:
-  #  openai:
-  #    base-url: http://localhost:11434
-  #    api-key: ollama
-  #    chat:
-  #      options:
-  #        model: apertus:8b-q5
+          model: apertus:8b-q5

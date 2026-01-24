@@ -1,23 +1,28 @@
 package ch.arcticsoft.spring;
 
 import java.lang.invoke.MethodHandles;
+import java.time.Duration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RestController
-@RequestMapping("/chat")
 public class ChatController {
 	
 	private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -57,6 +62,7 @@ You are a helpful assistent. Please answer the question.
         this.objectMapper = objectMapper;
     }
     
+	@RequestMapping("/chat")
     @PostMapping
     public Mono<String> chat(@RequestBody ChatRequest request) {
         String msg = request == null ? null : request.message();
@@ -87,7 +93,42 @@ You are a helpful assistent. Please answer the question.
           //.doOnNext(r -> log.info("📤 emitting response to client: '{}'", r))
           .doOnError(e -> log.error("❌ error in chat()", e));
     }
-    private String toJson(Object o) {
+    
+	@RequestMapping("/stream")
+    @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<String>> stream(@RequestBody ChatRequest request) {
+      log.info("stream");
+      String msg = request == null ? null : request.message();
+      if (msg == null || msg.trim().isEmpty()) {
+          return Flux.error(new ResponseStatusException(
+                  HttpStatus.BAD_REQUEST,
+                  "message must not be empty"
+          ));
+      }
+      log.info("*********************************************************************");
+      log.info("Question: {}", msg);
+      Flux<ServerSentEvent<String>> tokens = chatClient
+              .prompt()
+              .system(promptText)
+              .user(msg.trim())
+              .stream()
+              .content()
+              .map(t -> ServerSentEvent.builder(t).event("token").build())
+              .doOnSubscribe(s -> log.info("📡 stream started"))
+              .doOnComplete(() -> log.info("✅ stream completed"))
+              .doOnError(e -> log.error("❌ error in stream()", e));
+      // Optional keep-alive every 15s so proxies don’t close idle connections
+      Flux<ServerSentEvent<String>> keepAlive =
+              Flux.interval(Duration.ofSeconds(15))
+                  .map(i -> ServerSentEvent.<String>builder()
+                          .event("keepalive")
+                          .data("")
+                          .build());
+    return Flux.merge(tokens, keepAlive);
+  }
+    
+    
+  private String toJson(Object o) {
     	  try {
     	    return objectMapper
     	        .writerWithDefaultPrettyPrinter()

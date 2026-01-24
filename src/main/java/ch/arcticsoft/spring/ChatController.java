@@ -108,6 +108,26 @@ You are a helpful assistent. Please answer the question.
       }
       log.info("*********************************************************************");
       log.info("Question: {}", msg);
+      Flux<String> stream = chatClient.prompt()
+    	      .system(promptText)
+    	      .user(msg.trim())
+    	      .stream()
+    	      .content()
+    	      .doOnSubscribe(s -> log.info("📡 stream started"))
+    	      .doOnComplete(() -> log.info("✅ stream completed"))
+    	      .doOnError(e -> log.error("❌ error in stream()", e))
+    	      .share();
+
+    	  Flux<ServerSentEvent<String>> tokens =
+    	      stream.map(t -> ServerSentEvent.builder(t).event("token").build());
+
+    	  Flux<ServerSentEvent<String>> keepAlive =
+    	      Flux.interval(Duration.ofSeconds(15))
+    	          .map(i -> ServerSentEvent.<String>builder().event("keepalive").data("").build())
+    	          .takeUntilOther(stream.ignoreElements());
+
+    	  return Flux.merge(tokens, keepAlive);
+      /**
       Flux<ServerSentEvent<String>> tokens = chatClient
               .prompt()
               .system(promptText)
@@ -117,6 +137,7 @@ You are a helpful assistent. Please answer the question.
               .map(t -> ServerSentEvent.builder(t).event("token").build())
               .doOnSubscribe(s -> log.info("📡 stream started"))
               .doOnComplete(() -> log.info("✅ stream completed"))
+              //.doFinally(sig -> log.info("🏁 tokens FINALLY {}", sig))
               .doOnError(e -> log.error("❌ error in stream()", e));
       // Optional keep-alive every 15s so proxies don’t close idle connections
       Flux<ServerSentEvent<String>> keepAlive =
@@ -126,7 +147,7 @@ You are a helpful assistent. Please answer the question.
                           .data("")
                           .build())
                   .takeUntilOther(tokens.ignoreElements()); // stop keepAlive when tokens completes/errors
-    return Flux.merge(tokens, keepAlive);
+    return Flux.merge(tokens, keepAlive);*/
   }
     
     

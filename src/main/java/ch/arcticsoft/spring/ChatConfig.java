@@ -60,24 +60,24 @@ public class ChatConfig {
         .build();
   }
   
-  @Bean
-  LuceneAdvisor luceneAdvisor() {
-    log.info("luceneAdvisor");
-    this.luceneAdvisor = new LuceneAdvisor();
-    return luceneAdvisor;
-  }
+//  @Bean
+//  LuceneAdvisor luceneAdvisor() {
+//    log.info("luceneAdvisor");
+//    this.luceneAdvisor = new LuceneAdvisor();
+//    return luceneAdvisor;
+//  }
 
   @Bean
   ChatClient chatClient(ChatClient.Builder builder,
-		  				ChatModel chatModel,
+		  				ChatModel chatModel
                         //ToolSearchToolCallAdvisor toolSearchToolCallAdvisor,
-                        LuceneAdvisor luceneAdvisor
+                        //LuceneAdvisor luceneAdvisor
                         ) {
 	log.info("chatClient");
     return builder
         .defaultAdvisors(
         		//this.luceneAdvisor,
-        		SimpleLoggerAdvisor.builder().build(),
+        		LuceneAdvisor.builder().build(),
         		ChatModelStreamAdvisor.builder().chatModel(chatModel).build() 
         	)
         .build();

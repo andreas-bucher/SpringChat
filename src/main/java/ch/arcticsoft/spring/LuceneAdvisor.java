@@ -4,11 +4,13 @@ import java.lang.invoke.MethodHandles;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springaicommunity.tool.searcher.LuceneToolSearcher;
 import org.springframework.ai.chat.client.ChatClientMessageAggregator;
 import org.springframework.ai.chat.client.ChatClientRequest;
 import org.springframework.ai.chat.client.ChatClientResponse;
 import org.springframework.ai.chat.client.advisor.api.StreamAdvisor;
 import org.springframework.ai.chat.client.advisor.api.StreamAdvisorChain;
+import org.springframework.ai.chat.messages.UserMessage;
 
 import reactor.core.publisher.Flux;
 
@@ -16,7 +18,15 @@ import reactor.core.publisher.Flux;
 public class LuceneAdvisor implements StreamAdvisor {
 
 	private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());	
-	private final int order = 0;
+	private final int order;
+	
+	private LuceneToolSearcher luceneToolSearcher;
+	
+	public LuceneAdvisor(int order) {
+		this.order = order;
+		luceneToolSearcher = new LuceneToolSearcher();
+		
+	}
 	
 	@Override
 	public String getName() {
@@ -33,6 +43,16 @@ public class LuceneAdvisor implements StreamAdvisor {
 			ChatClientRequest  chatClientRequest,
 			StreamAdvisorChain streamAdvisorChain) {
 		this.logRequest(chatClientRequest);
+		
+		String userQuery = chatClientRequest.prompt().getInstructions().stream()
+											.filter(UserMessage.class::isInstance)
+											.map(UserMessage.class::cast)
+											.map(UserMessage::getText)
+											.reduce((a, b) -> b)
+											.orElse("");
+		
+		log.info("userQuery: {}", userQuery);
+		
 		Flux<ChatClientResponse> chatClientResponses = streamAdvisorChain.nextStream(chatClientRequest);
 
 		return new ChatClientMessageAggregator().aggregateChatClientResponse(chatClientResponses, this::logResponse);
@@ -47,51 +67,29 @@ public class LuceneAdvisor implements StreamAdvisor {
 		log.debug("adviceStream - response: {}", chatClientResponse);
 	}	
 	
+
+	public static Builder builder() {
+		return new Builder();
+	}
+
 	
+	public static final class Builder {
+
+		private int order = 0;
+
+		private Builder() {
+		}
+
+		public Builder order(int order) {
+			this.order = order;
+			return this;
+		}
+
+		public LuceneAdvisor build() {
+			return new LuceneAdvisor(this.order);
+		}
+
+	}
 	
-/*
-  @Override
-  public AdvisorContext advise(AdvisorContext ctx) {
-
-    // Grab last user message (typical)
-    var lastUser = ctx.prompt().getInstructions().stream()
-        .filter(m -> m instanceof UserMessage)
-        .map(m -> (UserMessage) m)
-        .reduce((a,b) -> b)
-        .orElse(null);
-
-    if (lastUser == null) return ctx;
-
-//    var question = lastUser.getContent();
-//    if (!RagHeuristics.shouldSearch(question)) return ctx;
-//
-//    var hits = rag.search(question, 6);
-//    if (hits.isEmpty()) return ctx;
-
-    var contextBlock = new StringBuilder();
-    contextBlock.append("""
-      You may use the following retrieved context.
-      - If the context is irrelevant, ignore it.
-      - If you use it, cite the source tag like [source: ...].
-      
-      <context>
-      """);
-
-//    for (int i = 0; i < hits.size(); i++) {
-//      var h = hits.get(i);
-//      contextBlock.append("\n[chunk ").append(i + 1).append("] ")
-//          .append("[source: ").append(h.source()).append("]\n")
-//          .append(h.text()).append("\n");
-//    }
-    contextBlock.append("</context>\n");
-
-    // Inject as a SYSTEM message (strong guidance)
-    ctx.prompt().getInstructions().addFirst(new SystemMessage(contextBlock.toString()));
-    return ctx;
-  }
-	*/
-	
-	
-
 	
 }

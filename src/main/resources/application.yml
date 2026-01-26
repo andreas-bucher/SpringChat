@@ -56,8 +56,17 @@ spring:
    #       model: gpt-4o-mini        
     ollama:
       base-url: http://localhost:11434
+      embedding:
+        model: bge-m3
       api-key: ollama
       chat:
         options:
-          model: apertus:8b-q5
+          model: hf.co/bartowski/swiss-ai_Apertus-8B-Instruct-2509-GGUF:Q4_K_M
           num-predict: 126
+    vectorstore:
+      qdrant:
+        host: localhost
+        port: 6334
+        collection-name: springchat_tools_bg3_m3
+        use-tls: false
+        initialize-schema: true

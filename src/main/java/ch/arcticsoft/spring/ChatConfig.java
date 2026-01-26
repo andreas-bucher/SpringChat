@@ -28,7 +28,7 @@ public class ChatConfig {
   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private ToolSearcher toolSearcher;
   private ToolSearchToolCallAdvisor toolSearchToolCallAdvisor;
-  private LuceneAdvisor luceneAdvisor;
+  private ApertusAdvisor luceneAdvisor;
 
   
   @Bean
@@ -43,6 +43,7 @@ public class ChatConfig {
         .addModule(new JavaTimeModule())
         .build();
   }
+  /**
   
   @Bean
   ToolSearcher toolSearcher() {
@@ -58,7 +59,7 @@ public class ChatConfig {
     return ToolSearchToolCallAdvisor.builder()
         .toolSearcher(toolSearcher)
         .build();
-  }
+  }*/
   
 //  @Bean
 //  LuceneAdvisor luceneAdvisor() {
@@ -76,8 +77,8 @@ public class ChatConfig {
 	log.info("chatClient");
     return builder
         .defaultAdvisors(
-        		//this.luceneAdvisor,
-        		LuceneAdvisor.builder().build(),
+        		//PreSelectToolCallAdvisor.builder().build(),
+        		ApertusAdvisor.builder().build(),
         		ChatModelStreamAdvisor.builder().chatModel(chatModel).build() 
         	)
         .build();

@@ -28,27 +28,30 @@ public class ChatController {
     private final ChatClient chatClient;
 
 	private static final String promptText = """
-You have access to tool-calling, but you must NOT assume which tools exist. Tool availability is dynamic.
+You are an expert technical assistant.
 
-Tool-use policy:
-1) If the user’s request requires external actions or structured retrieval (e.g., search, lookup, fetch current information, compute using a tool, access app data), FIRST call the tool-search capability to discover the best tool(s) for the task.
-2) Do NOT invent tool names. Only call tools that were returned by tool-search.
-3) If tool-search returns no suitable tools, continue without tools and explain what you can do and what you cannot do.
-4) Do not call tool-search for simple conversational requests that you can answer directly.
+You reason carefully, step by step, but you only output the final answer unless explicitly asked for reasoning.
 
-Execution policy:
-- Prefer to gather the minimum tool information needed, then produce the final answer.
-- Do not call any tools after you have produced the final answer.
-- If the user asks for “now/current time/date”, treat it as requiring a tool unless you are explicitly told to answer without tools.
+Rules:
+- Be precise, concise, and correct.
+- Prefer structured answers (headings, bullet points, tables).
+- When unsure, say so explicitly instead of guessing.
+- Do not invent APIs, classes, or configuration values.
+- Use concrete examples when helpful.
 
-Style:
-- Be concise, accurate, and practical.
+Code:
+- When producing code, ensure it is complete, minimal, and idiomatic.
+- Match the requested language, framework, and versions exactly.
+- Avoid unnecessary abstractions.
+
+Output:
+- Default language: English
+- No emojis unless explicitly requested.
   	    """;
 
-	private static final String promptTextApertus = """
-You are a helpful assistent. Please answer the question.
+	private static final String promptText2 = """
+You are an expert technical assistant.
   	    """;
-	
 	
     public record ChatRequest(String message) {}
 	
@@ -59,7 +62,7 @@ You are a helpful assistent. Please answer the question.
         this.chatClient = chatClient;
         this.objectMapper = objectMapper;
     }
-    
+    /**
 	@RequestMapping("/chat")
     @PostMapping
     public Mono<String> chat(@RequestBody ChatRequest request) {
@@ -75,7 +78,7 @@ You are a helpful assistent. Please answer the question.
         return Mono.fromSupplier(() -> {
             var call = chatClient
                 .prompt()
-                .system(promptText)
+                .system(promptText2)
                 .user(msg.trim())
                 .call(); // ⬅️ BLOCKING
             
@@ -90,7 +93,7 @@ You are a helpful assistent. Please answer the question.
         }).subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
           //.doOnNext(r -> log.info("📤 emitting response to client: '{}'", r))
           .doOnError(e -> log.error("❌ error in chat()", e));
-    }
+    }*/
     
     @PostMapping(
     		value="/stream",
@@ -109,7 +112,7 @@ You are a helpful assistent. Please answer the question.
       log.info("*********************************************************************");
       log.info("Question: {}", msg);
       Flux<String> stream = chatClient.prompt()
-    	      .system(promptText)
+    	      .system(promptText2)
     	      .user(msg.trim())
     	      .stream()
     	      .content()

@@ -8,12 +8,14 @@ ollama serve
   
   
 # Start Qdrant
-docker run -p 6333:6333 -p 6334:6334 -v $(pwd)/qdrant-data:/qdrant/storage qdrant/qdrant:v1.14.1
+cd /Users/ante
+./qdrant
 
+--> do not want to use Docker
+docker run -p 6333:6333 -p 6334:6334 -v $(pwd)/qdrant-data:/qdrant/storage qdrant/qdrant:v1.14.1
 docker run --name qdrant \
   -p 6333:6333 -p 6334:6334 \
   -v $(pwd)/qdrant-data:/qdrant/data \
   qdrant/qdrant:v1.14.1
-  
 docker stop <container_id>
 docker rm <container_id>

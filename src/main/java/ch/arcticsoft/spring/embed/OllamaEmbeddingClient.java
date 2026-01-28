@@ -1,4 +1,4 @@
-package ch.arcticsoft.spring.rkt;
+package ch.arcticsoft.spring.embed;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -21,6 +21,7 @@ public class TimeTools {
         Always includes both date and time in ISO-8601 format.
         """)
     public String nowZurich() {
+    	log.debug("nowZurich");
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Europe/Zurich"));
         String str = """
         {
@@ -33,7 +34,7 @@ public class TimeTools {
                 now.toLocalDate(),
                 now.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm:ss")),
                 now.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-        log.info("TimeTools - nowZurich : {}", str);
+        log.trace("TimeTools - nowZurich : {}", str);
         return str;
         
     }

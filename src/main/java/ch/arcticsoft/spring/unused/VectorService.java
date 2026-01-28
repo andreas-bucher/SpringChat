@@ -1,4 +1,4 @@
-package ch.arcticsoft.spring.rkt;
+package ch.arcticsoft.spring.unused;
 
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
-
+/**
 @Service
 public class VectorService {
 	private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -29,7 +29,7 @@ public class VectorService {
         this.ollamaEmbeddingClient = ollamaEmbeddingClient;
     }
     
-    @PostConstruct
+    //@PostConstruct
     public void init() {
     	log.debug("init");
 		String sessionId = "default_"+ random.nextInt();
@@ -49,6 +49,10 @@ public class VectorService {
 		docs.add(doc);
 		this.addDocs(docs);
     }
+    
+    public VectorStore getVectorStore() {
+    	return this.vectorStore;
+    }
 
     public void addDocs(List<Document> docs) {
         vectorStore.add(docs);
@@ -57,4 +61,4 @@ public class VectorService {
     public List<Document> search(String query) {
         return vectorStore.similaritySearch(query);
     }
-}
+}*/

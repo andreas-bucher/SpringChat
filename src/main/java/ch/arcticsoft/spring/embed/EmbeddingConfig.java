@@ -1,4 +1,4 @@
-package ch.arcticsoft.spring.rkt;
+package ch.arcticsoft.spring.embed;
 
 
 /**

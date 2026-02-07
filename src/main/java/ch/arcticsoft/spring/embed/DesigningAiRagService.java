@@ -2,6 +2,10 @@ package ch.arcticsoft.spring.embed;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.chat.client.ChatClientRequest;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.SystemMessage;
+import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -29,6 +33,38 @@ public class DesigningAiRagService {
         
         //log.info("make one entry into Qdrant Collection");
         //this.addEntries();
+        
+    }
+    
+    public Mono<ChatClientRequest> enrichChatClientRequest(
+    		ChatClientRequest chatClientRequest, 
+    		String            userQuery) {
+    	
+		log.debug("enrichedChatlientRequest");
+        Mono<String> ctxMono = this.retrieveContext(userQuery, 2);
+        
+        return ctxMono.map(ctx -> {
+            	String ctxBlock3 = """
+                    Use only the provided information to answer the question precise and concise.
+                    %s
+                    """.formatted(ctx == null ? "" : ctx);	        	
+        	
+		        	log.trace("context: {}", ctx);
+		        	Prompt original = chatClientRequest.prompt();
+		        	
+		            List<Message> newMessages = new ArrayList<>();
+		            newMessages.add(new SystemMessage( ctxBlock3 )); // ← the ONE system message
+		        	
+		            for (Message m : original.getInstructions()) {
+		                if (!(m instanceof SystemMessage)) {
+		                    newMessages.add(m);
+		                }
+		            }
+		            Prompt newPrompt = new Prompt(newMessages, original.getOptions());  
+		        	return chatClientRequest.mutate()
+		            		.prompt(newPrompt)
+		            		.build();
+		        });
         
     }
 

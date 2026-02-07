@@ -30,6 +30,7 @@ public class ApertusAdvisor extends ToolCallAdvisor{
 	private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 	
 	private final ToolsService           toolsService;
+	private final TimeTools              timeTools = new TimeTools();
 	private final DesigningAiRagService  designingAiRagService;
 	
 	public ApertusAdvisor(
@@ -56,7 +57,7 @@ public class ApertusAdvisor extends ToolCallAdvisor{
 			StreamAdvisorChain streamAdvisorChain) {
 		
 		log.debug("adviseStream");
-		this.logRequest(chatClientRequest);
+		this.logRequest("origin", chatClientRequest);
 
 		String userQuery = chatClientRequest.prompt().getInstructions().stream()
 											.filter(UserMessage.class::isInstance)
@@ -86,91 +87,34 @@ public class ApertusAdvisor extends ToolCallAdvisor{
 	            		} 
 	            		String toolName = resp.toolReferences().getFirst().toolName();
 	            		
+	            		Mono<ChatClientRequest> enrichedChatClientRequest;
+	            		
 	            		if( toolName.equals("nowZurich") ) {
-	            			log.debug(" --> ");
-		        			String ctx = new TimeTools().nowZurich();
-		        	        String ctxBlock3 = """
-		        	                Use the provided information to answer the question precise and concise.
-		        	                %s
-		        	                """.formatted(ctx == null ? "" : ctx);
-		        	        
-		        	        
-		        	        Prompt original = chatClientRequest.prompt();
-	
-		        	        List<Message> newMessages = new ArrayList<>();
-		        	        newMessages.add(new SystemMessage( ctxBlock3 )); // ← the ONE system message
-	
-		        	        // keep all non-system messages
-		        	        for (Message m : original.getInstructions()) {
-		        	            if (!(m instanceof SystemMessage)) {
-		        	                newMessages.add(m);
-		        	            }
-		        	        }
-	
-		        	        Prompt newPrompt = new Prompt(newMessages, original.getOptions());        
-		        	        ChatClientRequest enrichedChatClientRequest = chatClientRequest.mutate()
-		        	        		.prompt(newPrompt)
-		        	        		.build();
-		        	        this.logRequest(enrichedChatClientRequest);
 		        	        log.info("******** TOOL CALL {} ******** ", toolName);
-		        	        Flux<ChatClientResponse> responses = streamAdvisorChain.nextStream(enrichedChatClientRequest);
-		        	        return new ChatClientMessageAggregator().aggregateChatClientResponse(responses, this::logResponse);
-		        	        
+	            			enrichedChatClientRequest = timeTools.enrichChatClientRequest(chatClientRequest);
+
 	            		} else if(  toolName.equals("outline_MIT_AI_course")  ||  toolName.equals("semantic_MIT_AI_course")  ) {
 		        	        log.info("******** TOOL CALL {} ******** ", toolName);
-	            			
-		        	        /**
-		        	        Mono<String> ctxMono = ragService.retrieveContext(userQuery, 5);
-		        	        return ctxMono.flatMap(ctx ->
-		        	            chatClient.prompt()
-		        	                .system("Use the CONTEXT to answer precisely.\n\nCONTEXT:\n" + ctx)
-		        	                .user(userQuery)
-		        	                .call()
-		        	                .content()
-		        	        );*/
-		        	        
-		        	        Mono<String> ctxMono = designingAiRagService.retrieveContext(userQuery, 2);
-		        	        //ctxMono.subscribe();
-		        	        String ctxBlock3 = """
-		        	                Use the provided information to answer the question precise and concise.
-		        	                %s
-		        	                """.formatted(ctxMono == null ? "" : ctxMono);		        	        
-		        	        log.debug("ctx: ", ctxMono);
-		        	        Prompt original = chatClientRequest.prompt();
-		        	    	
-		        	        List<Message> newMessages = new ArrayList<>();
-		        	        newMessages.add(new SystemMessage( ctxBlock3 )); // ← the ONE system message
-	
-		        	        // keep all non-system messages
-		        	        for (Message m : original.getInstructions()) {
-		        	            if (!(m instanceof SystemMessage)) {
-		        	                newMessages.add(m);
-		        	            }
-		        	        }
-	
-		        	        Prompt newPrompt = new Prompt(newMessages, original.getOptions());  
-		        	        
-		        	        
-		        	        ChatClientRequest enrichedChatClientRequest = chatClientRequest.mutate()
-		        	        		.prompt(newPrompt)
-		        	        		.build();
-		        	        
-		        	        this.logRequest(enrichedChatClientRequest);
-		        	        log.info("******** TOOL CALL {} ******** ", toolName);
-		        	        Flux<ChatClientResponse> responses = streamAdvisorChain.nextStream(enrichedChatClientRequest);
-		        	        return new ChatClientMessageAggregator().aggregateChatClientResponse(responses, this::logResponse);
+		        	        enrichedChatClientRequest = designingAiRagService.enrichChatClientRequest(chatClientRequest, userQuery);
 		        	        
 	            		} else {
 		        	        log.info("******** TOOL CALL {} ******** not implemented", toolName);
-		        	        Flux<ChatClientResponse> responses = streamAdvisorChain.nextStream(chatClientRequest);
-		        	        return new ChatClientMessageAggregator().aggregateChatClientResponse(responses, this::logResponse);
+		        	        enrichedChatClientRequest = Mono.just(chatClientRequest);
+		        	        
 	            		}
+	            		return enrichedChatClientRequest.flatMapMany( req -> {
+	            			this.logRequest("enriched", req);
+		        	        Flux<ChatClientResponse> responses = streamAdvisorChain.nextStream(req);
+		        	        return new ChatClientMessageAggregator().aggregateChatClientResponse(responses, this::logResponse); 
+
+	            		});
+
 				});
 	}
 
 
-	protected void logRequest(ChatClientRequest request) {
-		log.trace("adviseStream - request: {}", request);
+	protected void logRequest(String tag, ChatClientRequest request) {
+		log.trace("adviseStream - ({}) request: {}", tag, request);
 	}
 	
 	protected void logResponse(ChatClientResponse chatClientResponse) {

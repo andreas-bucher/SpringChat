@@ -4,11 +4,19 @@ import java.lang.invoke.MethodHandles;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.chat.client.ChatClientRequest;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.SystemMessage;
+import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.stereotype.Component;
+
+import reactor.core.publisher.Mono;
 
 @Component
 public class TimeTools {
@@ -37,5 +45,36 @@ public class TimeTools {
         log.trace("TimeTools - nowZurich : {}", str);
         return str;
         
+    }
+    
+    
+    public Mono<ChatClientRequest> enrichChatClientRequest(ChatClientRequest chatClientRequest) {
+		log.debug("enrichedChatlientRequest");
+		String ctx = new TimeTools().nowZurich();
+        String ctxBlock3 = """
+                Use the provided information to answer the question precise and concise.
+                %s
+                """.formatted(ctx == null ? "" : ctx);
+        
+        
+        Prompt original = chatClientRequest.prompt();
+
+        List<Message> newMessages = new ArrayList<>();
+        newMessages.add(new SystemMessage( ctxBlock3 )); // ← the ONE system message
+
+        // keep all non-system messages
+        for (Message m : original.getInstructions()) {
+            if (!(m instanceof SystemMessage)) {
+                newMessages.add(m);
+            }
+        }
+
+        Prompt newPrompt = new Prompt(newMessages, original.getOptions()); 
+        
+        ChatClientRequest enrichedChatClientRequest = chatClientRequest.mutate()
+        		.prompt(newPrompt)
+        		.build();
+        
+    	return Mono.just(enrichedChatClientRequest);
     }
 }

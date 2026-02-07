@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QdrantVectorStore Debug</title>
+  <style>
+    :root { --bg:#0b1220; --card:#101a2d; --muted:#9fb0d0; --text:#eaf0ff; --line:#24324f; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); color:var(--text); }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 24px; }
+    .h { display:flex; justify-content:space-between; gap: 12px; align-items:flex-end; }
+    h1 { margin:0; font-size: 22px; letter-spacing:.2px; }
+    .sub { margin-top:6px; color: var(--muted); font-size: 13px; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius: 14px; padding: 16px; }
+    .card h2 { margin:0 0 10px; font-size: 15px; color:#cfe0ff; }
+    label { display:block; font-size: 12px; color: var(--muted); margin: 10px 0 6px; }
+    input, select, textarea { width:100%; box-sizing:border-box; padding: 10px 11px; border-radius: 10px;
+      border:1px solid var(--line); background:#0d1629; color:var(--text); outline:none; }
+    textarea { min-height: 110px; resize: vertical; }
+    .row { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .row3 { display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .btns { display:flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+    button { padding: 10px 12px; border-radius: 12px; border:1px solid var(--line);
+      background:#162748; color:var(--text); cursor:pointer; }
+    button.secondary { background:#0d1629; }
+    button:disabled { opacity:.55; cursor:not-allowed; }
+    .status { margin-top: 10px; font-size: 12px; color: var(--muted); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    pre { margin:0; white-space: pre-wrap; word-break: break-word; background:#0d1629; border:1px solid var(--line);
+      border-radius: 14px; padding: 14px; max-height: 520px; overflow:auto; }
+    .pill { display:inline-block; padding: 3px 8px; border-radius: 999px; font-size: 12px; border:1px solid var(--line); background:#0d1629; color: var(--muted);}
+    .small { font-size: 12px; color: var(--muted); }
+    .warn { color: #ffd38a; }
+    .ok { color: #9dffbd; }
+    .err { color: #ff9d9d; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="h">
+    <div>
+      <h1>QdrantVectorStore Debug</h1>
+      <div class="sub">
+        Trigger similarity search on your backend endpoints and inspect raw results / payload.
+        <span class="pill mono" th:text="${appVersion} ?: 'SpringChat'">SpringChat</span>
+      </div>
+    </div>
+    <div class="small mono" th:text="'Server time: ' + (${serverTime} ?: '')">Server time:</div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Search</h2>
+
+      <label for="collection">Collection</label>
+      <select id="collection">
+        <option value="springchat_tools_bge_m3"
+                th:selected="${defaultCollection} == 'springchat_tools_bge_m3'">springchat_tools_bge_m3</option>
+        <option value="designing_ai_products_and_services_2"
+                th:selected="${defaultCollection} == 'designing_ai_products_and_services_2'">designing_ai_products_and_services_2</option>
+      </select>
+
+      <label for="query">Query</label>
+      <input id="query" type="text" placeholder="e.g. Superminds" value="Superminds" />
+
+      <div class="row3">
+        <div>
+          <label for="topK">topK</label>
+          <input id="topK" type="number" min="1" max="50" value="5" />
+        </div>
+        <div>
+          <label for="threshold">similarityThreshold</label>
+          <input id="threshold" type="number" step="0.01" min="-1" max="1" value="-1" />
+        </div>
+        <div>
+          <label for="includeEmb">includeEmbeddings</label>
+          <select id="includeEmb">
+            <option value="false" selected>false</option>
+            <option value="true">true</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="sourceFile">Filter: source_file (optional)</label>
+          <input id="sourceFile" type="text" placeholder="Module 8_Quick Reference Guide.pdf" />
+        </div>
+        <div>
+          <label for="page">Filter: page (optional)</label>
+          <input id="page" type="number" min="1" placeholder="e.g. 2" />
+        </div>
+      </div>
+
+      <div class="btns">
+        <button id="btnSearch">Run similaritySearch</button>
+        <button id="btnRaw" class="secondary">Run raw payload check</button>
+        <button id="btnClear" class="secondary">Clear</button>
+      </div>
+
+      <div id="status" class="status mono">Idle</div>
+      <div class="small warn" style="margin-top:10px;">
+        Tip: if you get “exactly one of text or media must be specified”, it usually means a hit is missing a valid
+        <span class="mono">content</span> field in payload (mixed schema in the collection).
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Result</h2>
+      <div class="small" style="margin-bottom: 8px;">
+        Response is shown as JSON. This page expects your backend to expose:
+        <span class="mono">POST /debug/qdrant/search</span> and
+        <span class="mono">POST /debug/qdrant/payload-check</span>
+      </div>
+      <pre id="out" class="mono">{}</pre>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <h2>Backend contract (what this page sends)</h2>
+    <pre class="mono" style="max-height:220px;">
+POST /debug/qdrant/search
+{
+  "collection": "designing_ai_products_and_services_2",
+  "query": "Superminds",
+  "topK": 5,
+  "similarityThreshold": -1,
+  "filters": { "source_file": "...", "page": 2 },
+  "includeEmbeddings": false
+}
+
+POST /debug/qdrant/payload-check
+{
+  "collection": "designing_ai_products_and_services_2",
+  "limit": 200
+}
+    </pre>
+  </div>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  function setStatus(text, cls) {
+    const el = $("status");
+    el.textContent = text;
+    el.className = "status mono " + (cls || "");
+  }
+
+  function pretty(obj) {
+    try { return JSON.stringify(obj, null, 2); } catch(e) { return String(obj); }
+  }
+
+  function collectSearchPayload() {
+    const filters = {};
+    const sf = $("sourceFile").value.trim();
+    const pg = $("page").value.trim();
+    if (sf) filters.source_file = sf;
+    if (pg) filters.page = Number(pg);
+
+    return {
+      collection: $("collection").value,
+      query: $("query").value,
+      topK: Number($("topK").value || 5),
+      similarityThreshold: Number($("threshold").value || -1),
+      includeEmbeddings: $("includeEmb").value === "true",
+      filters: Object.keys(filters).length ? filters : null
+    };
+  }
+
+  async function postJson(url, body) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    const text = await res.text();
+    let json;
+    try { json = JSON.parse(text); } catch (e) { json = { raw: text }; }
+
+    if (!res.ok) {
+      const err = new Error("HTTP " + res.status);
+      err.payload = json;
+      throw err;
+    }
+    return json;
+  }
+
+  $("btnSearch").addEventListener("click", async () => {
+    $("out").textContent = "{}";
+    setStatus("Running /debug/qdrant/search ...", "warn");
+
+    const payload = collectSearchPayload();
+    console.log(payload);
+
+    try {
+      const t0 = performance.now();
+      console.log("... postJson", payload);
+      const resp = await postJson("/debug2/qdrant/search", payload);
+      console.log("resp ...")
+      const dt = (performance.now() - t0).toFixed(1);
+
+      $("out").textContent = pretty(resp);
+      setStatus("OK (" + dt + " ms)", "ok");
+    } catch (e) {
+      $("out").textContent = pretty(e.payload || { error: e.message });
+      setStatus("ERROR: " + e.message, "err");
+    }
+  });
+
+  $("btnRaw").addEventListener("click", async () => {
+    $("out").textContent = "{}";
+    setStatus("Running /debug/qdrant/payload-check ...", "warn");
+
+    try {
+      const payload = { collection: $("collection").value, limit: 200 };
+      const t0 = performance.now();
+      const resp = await postJson("/debug2/qdrant/payload-check", payload);
+      const dt = (performance.now() - t0).toFixed(1);
+
+      $("out").textContent = pretty(resp);
+      setStatus("OK (" + dt + " ms)", "ok");
+    } catch (e) {
+      $("out").textContent = pretty(e.payload || { error: e.message });
+      setStatus("ERROR: " + e.message, "err");
+    }
+  });
+
+  $("btnClear").addEventListener("click", () => {
+    $("out").textContent = "{}";
+    setStatus("Idle");
+  });
+</script>
+</body>
+</html>

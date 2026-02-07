@@ -19,3 +19,9 @@ docker run --name qdrant \
   qdrant/qdrant:v1.14.1
 docker stop <container_id>
 docker rm <container_id>
+
+
+
+curl -v http://localhost:8080/X2 \
+  -H "Content-Type: application/json" \
+  --data '{"collection":"springchat_tools_bge_m3","query":"Superminds","topK":5,"similarityThreshold":-1,"includeEmbeddings":false,"filters":null}'

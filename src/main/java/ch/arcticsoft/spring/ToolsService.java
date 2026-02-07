@@ -1,13 +1,13 @@
 package ch.arcticsoft.spring;
 
 import java.lang.invoke.MethodHandles;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springaicommunity.tool.search.ToolReference;
 import org.springaicommunity.tool.search.ToolSearchRequest;
 import org.springaicommunity.tool.search.ToolSearchResponse;
 import org.springaicommunity.tool.searcher.VectorToolSearcher;
@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -40,40 +41,18 @@ public class ToolsService {
 	public Mono<ToolSearchResponse> toolSearch(String userQuery) {
 		log.debug("toolSearch...");
 		ToolSearchRequest toolSearchRequest = new ToolSearchRequest(sessionId, userQuery, 5, null);
-		//this.vectorToolSearcher.search(toolSearchRequest);
 		return Mono.fromCallable(() -> {
 				log.debug("toolSearch .. executing search ..");
-				this.vectorToolSearcher.search(toolSearchRequest);
 				return vectorToolSearcher.search(toolSearchRequest);
 			})
-			.subscribeOn(Schedulers.boundedElastic());
-//			.doOnNext( resp -> {
-//				log.debug("toolSearchResponse...");
-//				List<ToolReference> toolReferences = resp.toolReferences();
-//				for(ToolReference ref : toolReferences) {
-//					log.info("  ->  Tool found: {} relevanceScore: {} ", ref.toolName(), ref.relevanceScore());
-//				}
-//				//return resp;
-//			});			
+			.subscribeOn(Schedulers.boundedElastic());		
 	}
-	
-	
-	
 	
 	
 	//@PostConstruct
 	public void init(){
 		log.debug("init");
 		String sessionId = "default_session";
-		/*
-		UUID   toolId    = UUID.randomUUID();
-		String toolName  = "Current Date / Time Tool";
-		String toolDescription = """
-		        Returns the current date and time today/now/time in the Europe/Zurich timezone.
-		        Always includes both date and time in ISO-8601 format.
-		        """;
-		*/
-		
 		List<ToolDefinition> toolDefinitions = new ArrayList<ToolDefinition>();
 		toolDefinitions.add(this.currentDateTimeTool());
 		toolDefinitions.add(this.searchCertificatesTool());

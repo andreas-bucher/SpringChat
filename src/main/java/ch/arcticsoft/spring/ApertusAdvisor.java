@@ -3,14 +3,11 @@ package ch.arcticsoft.spring;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springaicommunity.tool.search.ToolReference;
-import org.springaicommunity.tool.search.ToolSearchRequest;
 import org.springaicommunity.tool.search.ToolSearchResponse;
-import org.springaicommunity.tool.searcher.LuceneToolSearcher;
 import org.springframework.ai.chat.client.ChatClientMessageAggregator;
 import org.springframework.ai.chat.client.ChatClientRequest;
 import org.springframework.ai.chat.client.ChatClientResponse;
@@ -21,8 +18,8 @@ import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.tool.ToolCallingManager;
-import org.springframework.beans.factory.annotation.Autowired;
 
+import ch.arcticsoft.spring.embed.DesigningAiRagService;
 import ch.arcticsoft.spring.tools.TimeTools;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -30,25 +27,21 @@ import reactor.core.publisher.Mono;
 
 public class ApertusAdvisor extends ToolCallAdvisor{
 
-	private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());	
-	private final LuceneToolSearcher luceneToolSearcher;
-	private final ToolsService toolsService;
-	private final Random random = new Random();
-
-	@Autowired
-	private TimeTools timeTools;
+	private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+	
+	private final ToolsService           toolsService;
+	private final DesigningAiRagService  designingAiRagService;
 	
 	public ApertusAdvisor(
-			ToolCallingManager toolCallingManager,
-			int advisorOrder, 
-			//VectorToolSearcher vectorToolSearcher,
-			ToolsService toolsService
+			ToolCallingManager     toolCallingManager,
+			int                    advisorOrder, 
+			ToolsService           toolsService,
+			DesigningAiRagService  designingAiRagService
 			) {
 		super(toolCallingManager, advisorOrder);
 		log.debug("ApertusAdvisor");
-		this.luceneToolSearcher = new LuceneToolSearcher();
-		//this.vectorToolSearcher = vectorToolSearcher;
-		this.toolsService = toolsService;
+		this.toolsService          = toolsService;
+		this.designingAiRagService = designingAiRagService;
 	}
 
 	
@@ -61,9 +54,9 @@ public class ApertusAdvisor extends ToolCallAdvisor{
 	public Flux<ChatClientResponse> adviseStream(
 			ChatClientRequest  chatClientRequest,
 			StreamAdvisorChain streamAdvisorChain) {
+		
 		log.debug("adviseStream");
 		this.logRequest(chatClientRequest);
-//		String sessionId = "session_" + random.nextInt();
 
 		String userQuery = chatClientRequest.prompt().getInstructions().stream()
 											.filter(UserMessage.class::isInstance)
@@ -76,9 +69,6 @@ public class ApertusAdvisor extends ToolCallAdvisor{
 		
 		Mono<ToolSearchResponse> toolSearchResponse2 = this.toolsService.toolSearch(userQuery);
 		return toolSearchResponse2
-//				.doOnNext(resp -> {
-//							log.debug("doOnNext - ToolSearch .. {}", resp.toolReferences().size());
-//						})
 	            .flatMapMany(resp -> {
 	            		log.debug("flatMapMany");
 	            		log.debug("ToolSearch .. {}", resp.toolReferences().size());
@@ -97,10 +87,8 @@ public class ApertusAdvisor extends ToolCallAdvisor{
 	            		String toolName = resp.toolReferences().getFirst().toolName();
 	            		
 	            		if( toolName.equals("nowZurich") ) {
-	            			log.debug(" -- ");
-
+	            			log.debug(" --> ");
 		        			String ctx = new TimeTools().nowZurich();
-	
 		        	        String ctxBlock3 = """
 		        	                Use the provided information to answer the question precise and concise.
 		        	                %s
@@ -128,62 +116,58 @@ public class ApertusAdvisor extends ToolCallAdvisor{
 		        	        Flux<ChatClientResponse> responses = streamAdvisorChain.nextStream(enrichedChatClientRequest);
 		        	        return new ChatClientMessageAggregator().aggregateChatClientResponse(responses, this::logResponse);
 		        	        
-	            		}else {
+	            		} else if(  toolName.equals("outline_MIT_AI_course")  ||  toolName.equals("semantic_MIT_AI_course")  ) {
+		        	        log.info("******** TOOL CALL {} ******** ", toolName);
+	            			
+		        	        /**
+		        	        Mono<String> ctxMono = ragService.retrieveContext(userQuery, 5);
+		        	        return ctxMono.flatMap(ctx ->
+		        	            chatClient.prompt()
+		        	                .system("Use the CONTEXT to answer precisely.\n\nCONTEXT:\n" + ctx)
+		        	                .user(userQuery)
+		        	                .call()
+		        	                .content()
+		        	        );*/
+		        	        
+		        	        Mono<String> ctxMono = designingAiRagService.retrieveContext(userQuery, 2);
+		        	        //ctxMono.subscribe();
+		        	        String ctxBlock3 = """
+		        	                Use the provided information to answer the question precise and concise.
+		        	                %s
+		        	                """.formatted(ctxMono == null ? "" : ctxMono);		        	        
+		        	        log.debug("ctx: ", ctxMono);
+		        	        Prompt original = chatClientRequest.prompt();
+		        	    	
+		        	        List<Message> newMessages = new ArrayList<>();
+		        	        newMessages.add(new SystemMessage( ctxBlock3 )); // ← the ONE system message
+	
+		        	        // keep all non-system messages
+		        	        for (Message m : original.getInstructions()) {
+		        	            if (!(m instanceof SystemMessage)) {
+		        	                newMessages.add(m);
+		        	            }
+		        	        }
+	
+		        	        Prompt newPrompt = new Prompt(newMessages, original.getOptions());  
+		        	        
+		        	        
+		        	        ChatClientRequest enrichedChatClientRequest = chatClientRequest.mutate()
+		        	        		.prompt(newPrompt)
+		        	        		.build();
+		        	        
+		        	        this.logRequest(enrichedChatClientRequest);
+		        	        log.info("******** TOOL CALL {} ******** ", toolName);
+		        	        Flux<ChatClientResponse> responses = streamAdvisorChain.nextStream(enrichedChatClientRequest);
+		        	        return new ChatClientMessageAggregator().aggregateChatClientResponse(responses, this::logResponse);
+		        	        
+	            		} else {
 		        	        log.info("******** TOOL CALL {} ******** not implemented", toolName);
 		        	        Flux<ChatClientResponse> responses = streamAdvisorChain.nextStream(chatClientRequest);
 		        	        return new ChatClientMessageAggregator().aggregateChatClientResponse(responses, this::logResponse);
 	            		}
-	        	        
-
-		        	        
 				});
-		
 	}
 
-	
-	
-	//@Override
-	public Flux<ChatClientResponse> adviseStreamXX(
-			ChatClientRequest  chatClientRequest,
-			StreamAdvisorChain streamAdvisorChain) {
-		log.debug("adviseStream");
-		this.logRequest(chatClientRequest);
-		
-		
-		String userQuery = chatClientRequest.prompt().getInstructions().stream()
-											.filter(UserMessage.class::isInstance)
-											.map(UserMessage.class::cast)
-											.map(UserMessage::getText)
-											.reduce((a, b) -> b)
-											.orElse("");
-		
-		log.info("userQuery: {}", userQuery);
-		String ctx = new TimeTools().nowZurich();
-        String ctxBlock3 = """
-                Use the provided information to answer the question precise and concise.
-                %s
-                """.formatted(ctx == null ? "" : ctx);
-        
-        Prompt original = chatClientRequest.prompt();
-
-        List<Message> newMessages = new ArrayList<>();
-        newMessages.add(new SystemMessage( ctxBlock3 )); // ← the ONE system message
-        for (Message m : original.getInstructions()) {
-            if (!(m instanceof SystemMessage)) {
-                newMessages.add(m);
-            }
-        }
-
-        Prompt newPrompt = new Prompt(newMessages, original.getOptions());        
-        ChatClientRequest enrichedChatClientRequest = chatClientRequest.mutate()
-        		.prompt(newPrompt)
-        		.build();
-        
-		this.logRequest(enrichedChatClientRequest);
-		
-		Flux<ChatClientResponse> chatClientResponses = streamAdvisorChain.nextStream(enrichedChatClientRequest);
-		return new ChatClientMessageAggregator().aggregateChatClientResponse(chatClientResponses, this::logResponse);
-	}
 
 	protected void logRequest(ChatClientRequest request) {
 		log.trace("adviseStream - request: {}", request);
@@ -207,19 +191,39 @@ public class ApertusAdvisor extends ToolCallAdvisor{
 	public static class Builder<T extends Builder<T>> extends ToolCallAdvisor.Builder<T> {
 
 		private ToolsService toolsService;
+		private DesigningAiRagService designingAiRagService;
 		
 		protected Builder() {
 		}
 		
 		public T toolsService(ToolsService toolsService) {
 			this.toolsService = toolsService;
+			log.debug("Builder.toolsService");
+			return self();
+		}
+		
+		public T designingAiRagService(DesigningAiRagService designingAiRagService) {
+			this.designingAiRagService = designingAiRagService;
+			log.debug("Builder.designingAiRagService");
 			return self();
 		}
 
 		@Override
 		public ApertusAdvisor build() {
 			log.debug("build");
-			return new ApertusAdvisor(getToolCallingManager(), getAdvisorOrder(), this.toolsService);
+			
+		    if (this.toolsService == null) {
+		        throw new IllegalStateException("toolsService must be set");
+		    }
+		    if (this.designingAiRagService == null) {
+		        throw new IllegalStateException("designingAiRagService must be set");
+		    }
+			
+			return new ApertusAdvisor(
+					getToolCallingManager(), 
+					getAdvisorOrder(), 
+					this.toolsService, 
+					this.designingAiRagService);
 		}
 		
 	}	

@@ -65,7 +65,7 @@ spring:
       chat:
         options:
           model: hf.co/bartowski/swiss-ai_Apertus-8B-Instruct-2509-GGUF:Q4_K_M
-          num-predict: 126
+          num-predict: 256
     vectorstore:
       qdrant:
         host: localhost

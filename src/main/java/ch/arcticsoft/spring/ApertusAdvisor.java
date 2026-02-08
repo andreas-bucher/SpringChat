@@ -1,8 +1,6 @@
 package ch.arcticsoft.spring;
 
 import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,10 +11,7 @@ import org.springframework.ai.chat.client.ChatClientRequest;
 import org.springframework.ai.chat.client.ChatClientResponse;
 import org.springframework.ai.chat.client.advisor.ToolCallAdvisor;
 import org.springframework.ai.chat.client.advisor.api.StreamAdvisorChain;
-import org.springframework.ai.chat.messages.Message;
-import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.tool.ToolCallingManager;
 
 import ch.arcticsoft.spring.embed.DesigningAiRagService;
@@ -93,9 +88,9 @@ public class ApertusAdvisor extends ToolCallAdvisor{
 		        	        log.info("******** TOOL CALL {} ******** ", toolName);
 	            			enrichedChatClientRequest = timeTools.enrichChatClientRequest(chatClientRequest);
 
-	            		} else if(  toolName.equals("outline_MIT_AI_course")  ||  toolName.equals("semantic_MIT_AI_course")  ) {
+	            		} else if(  toolName.equals("outline_MIT_AI_course")  ||  toolName.equals("semantic_MIT_AI_course") || toolName.equals("certificates") ) {
 		        	        log.info("******** TOOL CALL {} ******** ", toolName);
-		        	        enrichedChatClientRequest = designingAiRagService.enrichChatClientRequest(chatClientRequest, userQuery);
+		        	        enrichedChatClientRequest = designingAiRagService.enrichChatClientRequest(chatClientRequest, userQuery, toolName);
 		        	        
 	            		} else {
 		        	        log.info("******** TOOL CALL {} ******** not implemented", toolName);

@@ -25,12 +25,14 @@ import java.util.stream.Collectors;
 public class DesigningAiRagService {
 	private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private final VectorStore designingAiVectorStore;
+    private final VectorStore certificatesVectorStore;
 
     public DesigningAiRagService(
-            @Qualifier("designingAiVectorStore") VectorStore designingAiVectorStore) {
+            @Qualifier("designingAiVectorStore") VectorStore designingAiVectorStore,
+            @Qualifier("certificatesVectorStore") VectorStore certificatesVectorStore) {
     	log.debug("DesigningAiRagService");
-        this.designingAiVectorStore = designingAiVectorStore;
-        
+        this.designingAiVectorStore  = designingAiVectorStore;
+        this.certificatesVectorStore = certificatesVectorStore;
         //log.info("make one entry into Qdrant Collection");
         //this.addEntries();
         
@@ -38,10 +40,12 @@ public class DesigningAiRagService {
     
     public Mono<ChatClientRequest> enrichChatClientRequest(
     		ChatClientRequest chatClientRequest, 
-    		String            userQuery) {
+    		String            userQuery,
+    		String            toolName
+    	) {
     	
 		log.debug("enrichedChatlientRequest");
-        Mono<String> ctxMono = this.retrieveContext(userQuery, 2);
+        Mono<String> ctxMono = this.retrieveContext(userQuery, 2, toolName);
         
         return ctxMono.map(ctx -> {
             	String ctxBlock3 = """
@@ -69,16 +73,28 @@ public class DesigningAiRagService {
     }
 
     
-    public Mono<String> retrieveContext(String userQuery, int topK) {
+    public Mono<String> retrieveContext(String userQuery, int topK, String toolName) {
         return Mono.fromCallable(() -> {
         	log.debug("retrieveContext : {}", userQuery);
         	
-        	SearchRequest req = SearchRequest.builder().query(userQuery).topK(topK).build();
+        	List<Document> docs;
+        	SearchRequest req ;
         	
-            List<Document> docs = designingAiVectorStore.similaritySearch( req );
+        	switch (toolName) {
+        		case "certificates":
+        			int topK_local = 100;
+                	req = SearchRequest.builder().query(userQuery).topK(topK_local).build();
+        			docs = this.certificatesVectorStore.similaritySearch(req);
+        			break;
+        		default:
+                	req = SearchRequest.builder().query(userQuery).topK(topK).build();
+        			docs = this.designingAiVectorStore.similaritySearch( req );
+        	
+        	}
+            //List<Document> docs = designingAiVectorStore.similaritySearch( req );
             
             return docs.stream()
-            		.limit(topK)
+            		//.limit(topK)
                     .map(this::formatDoc)
                     .collect(Collectors.joining("\n\n---\n\n"));
 
@@ -89,6 +105,12 @@ public class DesigningAiRagService {
         .doOnNext(ctx -> log.debug("doOnNext - " ));
     }
 
+    private String formatDoc(Document d) {
+    	log.trace(d.getText());
+        return d.getText();
+    }
+    
+    /**
     private String formatDoc(Document d) {
         Map<String, Object> m = d.getMetadata();
 
@@ -101,7 +123,7 @@ public class DesigningAiRagService {
                 + " | PAGE: " + page
                 + "\n"
                 + d.getText();
-    }
+    }*/
     
     
     private void addEntries() {

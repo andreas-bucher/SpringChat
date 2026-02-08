@@ -28,4 +28,16 @@ public class ChatVectorStoresConfig {
                 .initializeSchema(true)   // set false if you don’t want auto-create
                 .build();
     }
+    
+    @Bean("certificatesVectorStore")
+    public VectorStore certificatesVectorStore(QdrantClient qdrantClient,
+                                              EmbeddingModel embeddingModel) {
+    	log.debug("designingAiVectorStore");
+        return QdrantVectorStore.builder(qdrantClient, embeddingModel)
+                .collectionName("certificates")
+                .initializeSchema(true)   // set false if you don’t want auto-create
+                .build();
+    }
+    
+    
 }

@@ -77,7 +77,7 @@ You are an expert technical assistant.
         this.designingAiRagService = designingAiRagService;
     }
     
-	  
+/*
   @PostMapping(value = "/test", produces = MediaType.APPLICATION_JSON_VALUE)
   public Mono<String> debug(
 		  @RequestBody String req, 
@@ -105,7 +105,7 @@ You are an expert technical assistant.
 
   	Mono<String> ctxMono = this.designingAiRagService.retrieveContext(req.query, req.topK);
   	return ctxMono;
-  }
+  }*/
   
 
   

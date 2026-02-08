@@ -30,11 +30,10 @@ public class RagVectorStoreService {
     public RagVectorStoreService(
             @Qualifier("designingAiVectorStore") VectorStore designingAiVectorStore,
             @Qualifier("certificatesVectorStore") VectorStore certificatesVectorStore) {
-    	log.debug("DesigningAiRagService");
+    	log.debug("RagVectorStoreService");
         this.designingAiVectorStore  = designingAiVectorStore;
         this.certificatesVectorStore = certificatesVectorStore;
-        //log.info("make one entry into Qdrant Collection");
-        //this.addEntries();
+
         
     }
     

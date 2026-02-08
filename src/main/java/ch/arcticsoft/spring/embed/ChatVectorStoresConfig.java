@@ -32,7 +32,7 @@ public class ChatVectorStoresConfig {
     @Bean("certificatesVectorStore")
     public VectorStore certificatesVectorStore(QdrantClient qdrantClient,
                                               EmbeddingModel embeddingModel) {
-    	log.debug("designingAiVectorStore");
+    	log.debug("certificatesVectorStore");
         return QdrantVectorStore.builder(qdrantClient, embeddingModel)
                 .collectionName("certificates")
                 .initializeSchema(true)   // set false if you don’t want auto-create

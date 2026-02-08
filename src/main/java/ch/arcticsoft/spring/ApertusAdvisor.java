@@ -16,6 +16,7 @@ import org.springframework.ai.model.tool.ToolCallingManager;
 
 import ch.arcticsoft.spring.embed.RagVectorStoreService;
 import ch.arcticsoft.spring.tools.TimeTools;
+import ch.arcticsoft.spring.tools.ToolsService;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -32,12 +33,12 @@ public class ApertusAdvisor extends ToolCallAdvisor{
 			ToolCallingManager     toolCallingManager,
 			int                    advisorOrder, 
 			ToolsService           toolsService,
-			RagVectorStoreService  designingAiRagService
+			RagVectorStoreService  ragVectorStoreService
 			) {
 		super(toolCallingManager, advisorOrder);
 		log.debug("ApertusAdvisor");
 		this.toolsService          = toolsService;
-		this.ragVectorStoreService = designingAiRagService;
+		this.ragVectorStoreService = ragVectorStoreService;
 	}
 
 	
@@ -130,7 +131,7 @@ public class ApertusAdvisor extends ToolCallAdvisor{
 	public static class Builder<T extends Builder<T>> extends ToolCallAdvisor.Builder<T> {
 
 		private ToolsService toolsService;
-		private RagVectorStoreService designingAiRagService;
+		private RagVectorStoreService ragVectorStoreService;
 		
 		protected Builder() {
 		}
@@ -142,8 +143,8 @@ public class ApertusAdvisor extends ToolCallAdvisor{
 		}
 		
 		public T designingAiRagService(RagVectorStoreService designingAiRagService) {
-			this.designingAiRagService = designingAiRagService;
-			log.debug("Builder.designingAiRagService");
+			this.ragVectorStoreService = designingAiRagService;
+			log.debug("Builder.ragVectorStoreService");
 			return self();
 		}
 
@@ -154,15 +155,15 @@ public class ApertusAdvisor extends ToolCallAdvisor{
 		    if (this.toolsService == null) {
 		        throw new IllegalStateException("toolsService must be set");
 		    }
-		    if (this.designingAiRagService == null) {
-		        throw new IllegalStateException("designingAiRagService must be set");
+		    if (this.ragVectorStoreService == null) {
+		        throw new IllegalStateException("ragVectorStoreService must be set");
 		    }
 			
 			return new ApertusAdvisor(
 					getToolCallingManager(), 
 					getAdvisorOrder(), 
 					this.toolsService, 
-					this.designingAiRagService);
+					this.ragVectorStoreService);
 		}
 		
 	}	

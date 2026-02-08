@@ -16,6 +16,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import ch.arcticsoft.spring.embed.RagVectorStoreService;
 import ch.arcticsoft.spring.tools.TimeTools;
+import ch.arcticsoft.spring.tools.ToolsService;
 
 @Configuration
 public class ChatConfig {

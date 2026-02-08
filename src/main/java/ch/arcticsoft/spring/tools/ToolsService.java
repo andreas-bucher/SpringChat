@@ -1,7 +1,6 @@
-package ch.arcticsoft.spring;
+package ch.arcticsoft.spring.tools;
 
 import java.lang.invoke.MethodHandles;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -16,13 +15,12 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 @Service
 public class ToolsService {
+	
 	private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 	private static final String sessionId = "default_session";
 	private VectorToolSearcher vectorToolSearcher;	
@@ -37,6 +35,7 @@ public class ToolsService {
 		log.debug("vectorToolSearcher ...");
 		return this.vectorToolSearcher;
 	}
+	
 	
 	public Mono<ToolSearchResponse> toolSearch(String userQuery) {
 		log.debug("toolSearch...");

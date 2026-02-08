@@ -18,7 +18,7 @@ import org.springframework.web.server.ServerWebExchange;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import ch.arcticsoft.spring.embed.DesigningAiRagService;
+import ch.arcticsoft.spring.embed.RagVectorStoreService;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -28,7 +28,7 @@ public class ChatController {
 	private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 	private final ObjectMapper objectMapper;
     private final ChatClient chatClient;
-	private final DesigningAiRagService designingAiRagService;
+	private final RagVectorStoreService designingAiRagService;
 
 	private static final String promptText = """
 You are an expert technical assistant.
@@ -70,7 +70,7 @@ You are an expert technical assistant.
 	public ChatController(
 			ChatClient chatClient, 
 			ObjectMapper objectMapper,
-			DesigningAiRagService designingAiRagService) {
+			RagVectorStoreService designingAiRagService) {
 		
         this.chatClient = chatClient;
         this.objectMapper = objectMapper;

@@ -22,12 +22,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
-public class DesigningAiRagService {
+public class RagVectorStoreService {
 	private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private final VectorStore designingAiVectorStore;
     private final VectorStore certificatesVectorStore;
 
-    public DesigningAiRagService(
+    public RagVectorStoreService(
             @Qualifier("designingAiVectorStore") VectorStore designingAiVectorStore,
             @Qualifier("certificatesVectorStore") VectorStore certificatesVectorStore) {
     	log.debug("DesigningAiRagService");

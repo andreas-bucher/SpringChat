@@ -14,7 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-import ch.arcticsoft.spring.embed.DesigningAiRagService;
+import ch.arcticsoft.spring.embed.RagVectorStoreService;
 import ch.arcticsoft.spring.tools.TimeTools;
 
 @Configuration
@@ -39,7 +39,7 @@ public class ChatConfig {
   ChatClient chatClient(ChatClient.Builder     builder,
 		  				ChatModel              chatModel,
 		  				ToolsService           toolsService,
-		  				DesigningAiRagService  designingAiRagService
+		  				RagVectorStoreService  designingAiRagService
                         ) {
 	log.info("chatClient");
 	log.debug("ToolsService: {}", toolsService);

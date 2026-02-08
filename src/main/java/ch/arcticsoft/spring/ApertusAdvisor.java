@@ -14,7 +14,7 @@ import org.springframework.ai.chat.client.advisor.api.StreamAdvisorChain;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.model.tool.ToolCallingManager;
 
-import ch.arcticsoft.spring.embed.DesigningAiRagService;
+import ch.arcticsoft.spring.embed.RagVectorStoreService;
 import ch.arcticsoft.spring.tools.TimeTools;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -26,18 +26,18 @@ public class ApertusAdvisor extends ToolCallAdvisor{
 	
 	private final ToolsService           toolsService;
 	private final TimeTools              timeTools = new TimeTools();
-	private final DesigningAiRagService  designingAiRagService;
+	private final RagVectorStoreService  ragVectorStoreService;
 	
 	public ApertusAdvisor(
 			ToolCallingManager     toolCallingManager,
 			int                    advisorOrder, 
 			ToolsService           toolsService,
-			DesigningAiRagService  designingAiRagService
+			RagVectorStoreService  designingAiRagService
 			) {
 		super(toolCallingManager, advisorOrder);
 		log.debug("ApertusAdvisor");
 		this.toolsService          = toolsService;
-		this.designingAiRagService = designingAiRagService;
+		this.ragVectorStoreService = designingAiRagService;
 	}
 
 	
@@ -90,7 +90,7 @@ public class ApertusAdvisor extends ToolCallAdvisor{
 
 	            		} else if(  toolName.equals("outline_MIT_AI_course")  ||  toolName.equals("semantic_MIT_AI_course") || toolName.equals("certificates") ) {
 		        	        log.info("******** TOOL CALL {} ******** ", toolName);
-		        	        enrichedChatClientRequest = designingAiRagService.enrichChatClientRequest(chatClientRequest, userQuery, toolName);
+		        	        enrichedChatClientRequest = ragVectorStoreService.enrichChatClientRequest(chatClientRequest, userQuery, toolName);
 		        	        
 	            		} else {
 		        	        log.info("******** TOOL CALL {} ******** not implemented", toolName);
@@ -130,7 +130,7 @@ public class ApertusAdvisor extends ToolCallAdvisor{
 	public static class Builder<T extends Builder<T>> extends ToolCallAdvisor.Builder<T> {
 
 		private ToolsService toolsService;
-		private DesigningAiRagService designingAiRagService;
+		private RagVectorStoreService designingAiRagService;
 		
 		protected Builder() {
 		}
@@ -141,7 +141,7 @@ public class ApertusAdvisor extends ToolCallAdvisor{
 			return self();
 		}
 		
-		public T designingAiRagService(DesigningAiRagService designingAiRagService) {
+		public T designingAiRagService(RagVectorStoreService designingAiRagService) {
 			this.designingAiRagService = designingAiRagService;
 			log.debug("Builder.designingAiRagService");
 			return self();
